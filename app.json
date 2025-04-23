@@ -1,0 +1,10 @@
+{
+  "expo": {
+    "name": "Out the Door",
+    "slug": "out-the-door-app",
+    "version": "0.1.0",
+    "sdkVersion": "50.0.0",
+    "platforms": ["ios","android","web"],
+    "extra": {}
+  }
+}
