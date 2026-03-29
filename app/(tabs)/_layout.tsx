@@ -43,6 +43,20 @@ export default function TabLayout() {
           tabBarIcon: ({ focused }) => <Icon emoji="🎟️" focused={focused} />,
         }}
       />
+      <Tabs.Screen
+        name="ask"
+        options={{
+          title: "Ask AI",
+          tabBarIcon: ({ focused }) => <Icon emoji="✨" focused={focused} />,
+        }}
+      />
+      <Tabs.Screen
+        name="saved"
+        options={{
+          title: "Saved",
+          tabBarIcon: ({ focused }) => <Icon emoji="❤️" focused={focused} />,
+        }}
+      />
     </Tabs>
   );
 }
