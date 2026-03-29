@@ -267,6 +267,9 @@ function EventRow({ event }: { event: UnifiedEvent }) {
         <Text style={styles.rowTitle} numberOfLines={2}>{event.title}</Text>
         <Text style={styles.rowVenue} numberOfLines={1}>{event.venue}</Text>
         <View style={styles.rowMeta}>
+          {event.date && event.date !== "Tonight" && event.date !== "Today" ? (
+            <Text style={styles.rowMetaText}>{event.date}</Text>
+          ) : null}
           {event.time && event.time !== "TBD" ? (
             <Text style={styles.rowMetaText}>{event.time}</Text>
           ) : null}
@@ -447,28 +450,30 @@ export default function EventsScreen() {
       </View>
 
       {/* Category chips */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.chips}
-      >
-        {CATEGORIES.map((cat) => {
-          const count = categoryCounts[cat.key] ?? 0;
-          if (cat.key !== "all" && count === 0) return null;
-          return (
-            <Pressable
-              key={cat.key}
-              onPress={() => setActiveCategory(cat.key)}
-              style={[styles.chip, activeCategory === cat.key && styles.chipActive]}
-            >
-              <Text style={[styles.chipText, activeCategory === cat.key && styles.chipTextActive]}>
-                {cat.emoji} {cat.label}
-                {count > 0 ? ` ${count}` : ""}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
+      <View style={styles.chipsWrapper}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.chips}
+        >
+          {CATEGORIES.map((cat) => {
+            const count = categoryCounts[cat.key] ?? 0;
+            if (cat.key !== "all" && count === 0) return null;
+            return (
+              <Pressable
+                key={cat.key}
+                onPress={() => setActiveCategory(cat.key)}
+                style={[styles.chip, activeCategory === cat.key && styles.chipActive]}
+              >
+                <Text style={[styles.chipText, activeCategory === cat.key && styles.chipTextActive]}>
+                  {cat.emoji} {cat.label}
+                  {count > 0 ? ` ${count}` : ""}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      </View>
 
       {/* Content */}
       {loading ? (
@@ -543,11 +548,13 @@ const styles = StyleSheet.create({
   searchInput: { flex: 1, color: "#fff", fontSize: 14 },
   searchClear: { fontSize: 12, color: "#444455", padding: 4 },
 
-  chips: { paddingHorizontal: 20, paddingBottom: 12, gap: 8 },
+  chipsWrapper: { height: 48, marginBottom: 4 },
+  chips: { paddingHorizontal: 20, alignItems: "center" },
   chip: {
     paddingHorizontal: 14, paddingVertical: 7,
     borderRadius: 100, borderWidth: 1,
     borderColor: "#2a2a3a", backgroundColor: "#1a1a26",
+    marginRight: 8,
   },
   chipActive: { backgroundColor: "#FF8C42", borderColor: "#FF8C42" },
   chipText: { fontSize: 13, color: "#888", fontWeight: "600" },
@@ -578,18 +585,18 @@ const styles = StyleSheet.create({
     position: "absolute", bottom: 0, left: 0, right: 0,
     padding: 16,
   },
-  heroBadgeRow: { flexDirection: "row", gap: 6, marginBottom: 8 },
+  heroBadgeRow: { flexDirection: "row", marginBottom: 8 },
   heroBadge: {
     backgroundColor: "rgba(255,140,66,0.85)",
     paddingHorizontal: 8, paddingVertical: 3,
-    borderRadius: 6,
+    borderRadius: 6, marginRight: 6,
   },
   heroPriceBadge: { backgroundColor: "rgba(0,0,0,0.6)" },
   heroBadgeText: { fontSize: 9, fontWeight: "700", letterSpacing: 1, color: "#fff" },
   heroTitle: { fontSize: 22, fontWeight: "800", color: "#fff", marginBottom: 4, lineHeight: 28 },
   heroVenue: { fontSize: 13, color: "rgba(255,255,255,0.7)", marginBottom: 6 },
-  heroMeta: { flexDirection: "row", gap: 12 },
-  heroMetaText: { fontSize: 11, color: "rgba(255,255,255,0.55)" },
+  heroMeta: { flexDirection: "row" },
+  heroMetaText: { fontSize: 11, color: "rgba(255,255,255,0.55)", marginRight: 12 },
   heroSaveBtn: {
     position: "absolute", top: 12, right: 12,
     backgroundColor: "rgba(0,0,0,0.5)",
@@ -623,8 +630,8 @@ const styles = StyleSheet.create({
   rowCategory: { fontSize: 9, fontWeight: "700", letterSpacing: 1.5, color: "#FF8C42", marginBottom: 3 },
   rowTitle: { fontSize: 14, fontWeight: "700", color: "#fff", marginBottom: 2 },
   rowVenue: { fontSize: 12, color: "#666680", marginBottom: 4 },
-  rowMeta: { flexDirection: "row", alignItems: "center", gap: 8 },
-  rowMetaText: { fontSize: 11, color: "#555570" },
+  rowMeta: { flexDirection: "row", alignItems: "center" },
+  rowMetaText: { fontSize: 11, color: "#555570", marginRight: 8 },
   rowPrice: { fontSize: 11, color: "#FF8C42", fontWeight: "600" },
   rowSaveBtn: { paddingHorizontal: 12, paddingVertical: 14 },
   rowSaveIcon: { fontSize: 16 },
