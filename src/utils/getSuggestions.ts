@@ -54,11 +54,20 @@ const MOOD_KEYWORDS: Record<Mood, string> = {
 };
 
 const CATEGORY_KEYWORDS: Record<string, string> = {
+  // Legacy
   food: "restaurant",
   art: "art gallery",
   nature: "park",
   movies: "cinema",
   random: "point_of_interest",
+  // New decision tree values
+  bar: "bar",
+  music: "music venue",
+  outdoor: "park",
+  explore: "attraction",
+  experience: "museum",
+  make: "art studio",
+  home: "cafe",
 };
 
 const RAINY_OVERRIDES: Record<string, string> = {
@@ -88,11 +97,20 @@ const MOOD_LOCAL_CATEGORIES: Record<Mood, EventCategory[]> = {
 
 // Which LocalEvent categories fit each user-selected category
 const CATEGORY_LOCAL_CATEGORIES: Record<string, EventCategory[]> = {
+  // Legacy
   food: ["food", "community"],
   art: ["arts", "film", "music"],
   nature: ["outdoor", "sports"],
   movies: ["film"],
   random: ["music", "arts", "film", "comedy", "sports", "outdoor", "community", "other"],
+  // New decision tree values
+  bar: ["music", "comedy", "community"],
+  music: ["music"],
+  outdoor: ["outdoor", "sports"],
+  explore: ["outdoor", "community"],
+  experience: ["arts", "film", "music"],
+  make: ["arts", "community"],
+  home: ["film"],
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -205,9 +223,14 @@ export async function getSuggestions(): Promise<SuggestionSet> {
   const timeframe: Timeframe = (answers.timeframe as Timeframe) ?? "now";
   // "close" = 8 miles (~13 km) — tight Columbus city radius
   // "far"   = 30 miles (~48 km) — broader metro / willing to drive
-  const radiusKm = answers.distance === "far" ? 48 : 13;
+  // low energy → always close regardless of distance answer
+  const isLowEnergy = answers.energy === "low";
+  const radiusKm = (answers.distance === "far" && !isLowEnergy) ? 48 : 13;
 
   const ctx = await buildContext(latitude, longitude, timeframe, radiusKm);
+
+  // "home" mood → skip fetching places, just return movies/local events
+  const isHomeMode = answers.category === "home";
 
   let keyword: string;
   if (answers.category && answers.category !== "random") {
@@ -216,6 +239,14 @@ export async function getSuggestions(): Promise<SuggestionSet> {
     keyword = CATEGORY_KEYWORDS.random;
   } else {
     keyword = mood ? MOOD_KEYWORDS[mood] : "cafe";
+  }
+
+  // Setting override: "indoor" moods skip outdoor keywords, "outdoor" skips bars/cafes
+  if (answers.setting === "outdoor" && (keyword === "cafe" || keyword === "bar")) {
+    keyword = "park";
+  }
+  if (answers.setting === "indoor" && keyword === "park") {
+    keyword = "cafe";
   }
 
   if (ctx.weather.isRainy) {
@@ -228,11 +259,13 @@ export async function getSuggestions(): Promise<SuggestionSet> {
   const weatherTag = buildWeatherTag(ctx);
   const radiusM = radiusKm * 1000;
 
-  // Run Google Places + Yelp in parallel, merge and deduplicate by name
-  const [googlePlaces, yelpPlaces] = await Promise.all([
-    searchPlaces(keyword, latitude, longitude, radiusM).catch(() => [] as Place[]),
-    searchYelp(keyword, latitude, longitude, radiusM).catch(() => [] as Place[]),
-  ]);
+  // "home" mode skips place search entirely
+  const [googlePlaces, yelpPlaces] = isHomeMode
+    ? [[] as Place[], [] as Place[]]
+    : await Promise.all([
+        searchPlaces(keyword, latitude, longitude, radiusM).catch(() => [] as Place[]),
+        searchYelp(keyword, latitude, longitude, radiusM).catch(() => [] as Place[]),
+      ]);
 
   const seenNames = new Set<string>();
   const places: Place[] = [];

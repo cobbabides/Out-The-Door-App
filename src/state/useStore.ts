@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { AppContext } from "../utils/buildContext";
+import { MOOD_FIRST_QUESTION } from "../utils/decisionTree";
 
 export type Mood =
   | "chill"
@@ -10,10 +11,13 @@ export type Mood =
   | "surprise";
 
 export interface Answers {
-  people?: string;
-  timeframe?: string; // "now" | "tonight" | "weekend"
-  distance?: string;
-  category?: string;
+  timeframe?: string;   // "now" | "tonight" | "weekend"
+  distance?: string;    // "close" | "far"
+  category?: string;    // "food" | "bar" | "music" | "outdoor" | "explore" |
+                        // "movies" | "experience" | "make" | "home" | "random"
+  setting?: string;     // "indoor" | "outdoor"
+  budget?: string;      // "low" | "mid" | "high"
+  energy?: string;      // "low" | "medium" | "high"
 }
 
 interface AppState {
@@ -32,14 +36,18 @@ interface AppState {
 const initialState = {
   mood: null,
   answers: {},
-  currentQuestionId: "people",
+  currentQuestionId: "chill_env", // overwritten when mood is picked
   context: null,
 };
 
 export const useStore = create<AppState>((set) => ({
   ...initialState,
 
-  setMood: (mood) => set({ mood }),
+  setMood: (mood) =>
+    set({
+      mood,
+      currentQuestionId: MOOD_FIRST_QUESTION[mood] ?? "chill_env",
+    }),
 
   setAnswer: (key, value) =>
     set((state) => ({
