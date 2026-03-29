@@ -89,8 +89,10 @@ export async function buildContext(
     withTimeout(
       Promise.all([
         scrapeAllLocalEvents().catch((): LocalEvent[] => []),
-        getNearbyParks(latitude, longitude).catch((): LocalEvent[] => []),
-        getNearbyFacilities(latitude, longitude).catch((): LocalEvent[] => []),
+        // Use the real radius for NPS/RecGov; floor at 20mi so outdoor results
+        // don't vanish when the user picks "close by".
+        getNearbyParks(latitude, longitude, Math.max(radiusMi, 20)).catch((): LocalEvent[] => []),
+        getNearbyFacilities(latitude, longitude, Math.max(radiusMi, 20)).catch((): LocalEvent[] => []),
       ]).then(([scraped, parks, facilities]) => [...scraped, ...parks, ...facilities]),
       []
     ),

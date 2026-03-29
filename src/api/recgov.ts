@@ -25,7 +25,7 @@ async function fetchRecGov(path: string, params: Record<string, string | number>
 export async function getNearbyFacilities(
   lat: number,
   lon: number,
-  radiusMi = 50,
+  radiusMi = 30,
   limit = 20
 ): Promise<LocalEvent[]> {
   const today = new Date().toISOString().split("T")[0];

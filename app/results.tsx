@@ -15,6 +15,23 @@ import { getPhotoUrl } from "../src/api/places";
 import { useStore } from "../src/state/useStore";
 import { useSavedStore } from "../src/state/useSavedStore";
 
+// ─── Date helpers ─────────────────────────────────────────────────────────────
+
+/** Turn "2026-03-29" or "Tonight" into a display-friendly label */
+function friendlyDate(raw?: string): string {
+  if (!raw) return "";
+  // Already a human label (Tonight, Tomorrow, Sat, Mar 29…)
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+  const [y, m, d] = raw.split("-").map(Number);
+  const date = new Date(y, m - 1, d);
+  const today = new Date();
+  const todayMid = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const diff = Math.round((date.getTime() - todayMid.getTime()) / 86400000);
+  if (diff === 0) return "Today";
+  if (diff === 1) return "Tomorrow";
+  return date.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" });
+}
+
 // ─── Category helpers ─────────────────────────────────────────────────────────
 
 const PLACE_EMOJI: Record<string, string> = {
@@ -176,7 +193,7 @@ function EventCard({ result }: { result: Extract<AnyResult, { type: "event" }> }
         {/* Date overlay on image */}
         {e.date && (
           <View style={styles.cardDateOverlay}>
-            <Text style={styles.cardDateText}>{e.date}{e.time && e.time !== "TBD" ? ` · ${e.time}` : ""}</Text>
+            <Text style={styles.cardDateText}>{friendlyDate(e.date)}{e.time && e.time !== "TBD" ? ` · ${e.time}` : ""}</Text>
           </View>
         )}
       </View>
@@ -298,7 +315,7 @@ function LocalEventCard({ result }: { result: LocalEventResult }) {
         {(e.date || e.time) && (
           <View style={styles.cardDateOverlay}>
             <Text style={styles.cardDateText}>
-              {[e.date, e.time].filter(Boolean).join(" · ")}
+              {[friendlyDate(e.date), e.time].filter(Boolean).join(" · ")}
             </Text>
           </View>
         )}

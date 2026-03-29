@@ -26,7 +26,7 @@ function distanceMi(lat1: number, lon1: number, lat2: number, lon2: number): num
 export async function getNearbyParks(
   lat: number,
   lon: number,
-  radiusMi = 75
+  radiusMi = 30
 ): Promise<LocalEvent[]> {
   const key = process.env.EXPO_PUBLIC_NPS_KEY;
   const stateCode = NEARBY_STATES.join(",");
