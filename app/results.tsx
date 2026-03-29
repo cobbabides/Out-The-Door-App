@@ -14,6 +14,7 @@ import { getSuggestions, SuggestionSet, AnyResult, LocalEventResult } from "../s
 import { getPhotoUrl } from "../src/api/places";
 import { useStore } from "../src/state/useStore";
 import { useSavedStore } from "../src/state/useSavedStore";
+import { usePlanStore, PlanAnchor } from "../src/state/usePlanStore";
 
 // ─── Date helpers ─────────────────────────────────────────────────────────────
 
@@ -66,6 +67,20 @@ function WeatherBar({ ctx }: { ctx: SuggestionSet["context"] }) {
       </Text>
       <Text style={styles.weatherRight}>🌅 {weather.sunsetTime} · {time.label}</Text>
     </View>
+  );
+}
+
+// ─── Plan Button ─────────────────────────────────────────────────────────────
+
+function PlanButton({ anchor }: { anchor: PlanAnchor }) {
+  const setAnchor = usePlanStore((s) => s.setAnchor);
+  return (
+    <Pressable
+      style={styles.planBtn}
+      onPress={() => { setAnchor(anchor); router.push("/plan"); }}
+    >
+      <Text style={styles.planBtnText}>🗓 Plan my night around this</Text>
+    </Pressable>
   );
 }
 
@@ -212,6 +227,11 @@ function EventCard({ result }: { result: Extract<AnyResult, { type: "event" }> }
             <Text style={styles.cardTags}>{contextTags.join(" · ")}</Text>
           )}
         </View>
+        <PlanButton anchor={{
+          title: e.name, venue: e.venue, time: e.time,
+          date: e.date, category: e.type,
+          emoji: EVENT_EMOJI[e.type] ?? "🎟️", url: e.url, address: e.address,
+        }} />
       </View>
     </Pressable>
   );
@@ -335,6 +355,11 @@ function LocalEventCard({ result }: { result: LocalEventResult }) {
             <Text style={styles.cardTags}>{contextTags.join(" · ")}</Text>
           )}
         </View>
+        <PlanButton anchor={{
+          title: e.title, venue: e.venue, time: e.time,
+          date: e.date, category: e.category,
+          emoji: LOCAL_EMOJI[e.category] ?? "📅", url: e.url, address: e.address,
+        }} />
       </View>
     </>
   );
@@ -542,6 +567,18 @@ const styles = StyleSheet.create({
   emptyBox: { alignItems: "center", paddingVertical: 40 },
   emptyEmoji: { fontSize: 40, marginBottom: 12 },
   emptyText: { color: "#555570", textAlign: "center", fontSize: 14, lineHeight: 20 },
+
+  planBtn: {
+    marginTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#222235",
+    paddingTop: 12,
+  },
+  planBtnText: {
+    fontSize: 13,
+    color: "#FF8C42",
+    fontWeight: "600",
+  },
 
   startOverBtn: {
     marginTop: 12,

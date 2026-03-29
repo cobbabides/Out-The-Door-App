@@ -7,6 +7,7 @@ export default function RootLayout() {
       <Stack.Screen name="mood" />
       <Stack.Screen name="question" />
       <Stack.Screen name="results" />
+      <Stack.Screen name="plan" />
     </Stack>
   );
 }
