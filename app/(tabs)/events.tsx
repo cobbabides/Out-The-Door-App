@@ -39,46 +39,50 @@ type DateBucket = "Today" | "Tomorrow" | "This Week" | "Later";
 
 // ─── Date Utilities ───────────────────────────────────────────────────────────
 
+/** Convert a local Date to a YYYY-MM-DD string without UTC offset issues */
+function localISO(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 function toISO(formatted: string): string {
   const today = new Date();
-  const todayISO = today.toISOString().split("T")[0];
+  const todayISO = localISO(today);
   const lc = formatted.toLowerCase();
 
   if (lc === "tonight" || lc === "today") return todayISO;
 
   if (lc === "tomorrow") {
-    const d = new Date(today);
-    d.setDate(today.getDate() + 1);
-    return d.toISOString().split("T")[0];
+    const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+    return localISO(d);
   }
+
+  // Already a YYYY-MM-DD string — return as-is (no UTC shift)
+  if (/^\d{4}-\d{2}-\d{2}$/.test(formatted)) return formatted;
 
   // Try adding current year for strings like "Sat, Mar 29"
   const withYear = `${formatted}, ${today.getFullYear()}`;
   const parsed = new Date(withYear);
   if (!isNaN(parsed.getTime())) {
-    return parsed.toISOString().split("T")[0];
+    return localISO(parsed);
   }
 
   // Direct parse
   const direct = new Date(formatted);
   if (!isNaN(direct.getTime())) {
-    return direct.toISOString().split("T")[0];
+    return localISO(direct);
   }
 
   return todayISO; // fallback to today
 }
 
 function getBucket(rawDate: string): DateBucket {
-  const today = new Date();
-  const todayISO = today.toISOString().split("T")[0];
-
-  const tomorrow = new Date(today);
-  tomorrow.setDate(today.getDate() + 1);
-  const tomorrowISO = tomorrow.toISOString().split("T")[0];
-
-  const weekEnd = new Date(today);
-  weekEnd.setDate(today.getDate() + 7);
-  const weekEndISO = weekEnd.toISOString().split("T")[0];
+  const now = new Date();
+  const todayISO = localISO(new Date(now.getFullYear(), now.getMonth(), now.getDate()));
+  const tomorrowISO = localISO(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1));
+  const weekEndISO = localISO(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 7));
 
   if (rawDate <= todayISO) return "Today";
   if (rawDate === tomorrowISO) return "Tomorrow";
@@ -96,14 +100,13 @@ function fromTicketmaster(e: TMEvent): UnifiedEvent {
     : e.type === "comedy" ? "comedy"
     : "other";
 
-  const rawDate = toISO(e.date);
   return {
     id: `tm-${e.id}`,
     title: e.name,
     venue: e.venue,
     address: e.address,
     date: e.date,
-    rawDate,
+    rawDate: e.rawDate, // already correct local YYYY-MM-DD from API
     time: e.time,
     category: cat,
     image: e.image,

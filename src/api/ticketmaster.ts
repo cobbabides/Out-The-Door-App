@@ -4,7 +4,8 @@ export interface Event {
   type: "music" | "sports" | "arts" | "comedy" | "other";
   venue: string;
   address: string;
-  date: string;
+  date: string;    // human-readable display label
+  rawDate: string; // YYYY-MM-DD local date (reliable for sorting/grouping)
   time: string;
   url: string;
   minPrice?: number;
@@ -21,14 +22,25 @@ const TYPE_MAP: Record<string, Event["type"]> = {
   "KZFzniwnSyZfZ7v7nn": "comedy",
 };
 
-function formatEventDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  const now = new Date();
-  const tomorrow = new Date();
-  tomorrow.setDate(now.getDate() + 1);
+/**
+ * Parse a YYYY-MM-DD string as LOCAL midnight (not UTC).
+ * `new Date("2026-03-29")` is UTC midnight, which in e.g. EDT (UTC-4)
+ * becomes 2026-03-28 at 8 PM — one day off. Splitting and using the
+ * Date(y, m, d) constructor avoids this.
+ */
+function localDateFromISO(dateStr: string): Date {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
 
-  if (date.toDateString() === now.toDateString()) return "Tonight";
-  if (date.toDateString() === tomorrow.toDateString()) return "Tomorrow";
+function formatEventDate(localDate: string): string {
+  const date = localDateFromISO(localDate);
+  const now = new Date();
+  const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  if (date.getTime() === today.getTime()) return "Tonight";
+  if (date.getTime() === tomorrow.getTime()) return "Tomorrow";
   return date.toLocaleDateString([], {
     weekday: "short",
     month: "short",
@@ -66,6 +78,7 @@ export async function getNearbyEvents(
     const venue = e._embedded?.venues?.[0];
     const priceRange = e.priceRanges?.[0];
     const dateInfo = e.dates?.start;
+    const localDate: string = dateInfo?.localDate ?? "";
 
     return {
       id: e.id,
@@ -74,7 +87,8 @@ export async function getNearbyEvents(
       genre,
       venue: venue?.name ?? "Unknown Venue",
       address: venue?.address?.line1 ?? "",
-      date: dateInfo?.localDate ? formatEventDate(dateInfo.localDate) : "TBD",
+      date: localDate ? formatEventDate(localDate) : "TBD",
+      rawDate: localDate || new Date().toISOString().split("T")[0],
       time: dateInfo?.localTime
         ? new Date(`1970-01-01T${dateInfo.localTime}`).toLocaleTimeString([], {
             hour: "numeric",
