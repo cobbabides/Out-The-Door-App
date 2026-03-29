@@ -71,6 +71,9 @@ export async function getNearbyEvents(
 
   const rawEvents = json._embedded?.events ?? [];
 
+  // Ticketmaster uses DMA (Designated Market Area) routing and often returns
+  // results well outside the requested radius. Filter client-side when the
+  // venue distance field is present.
   return rawEvents.map((e: any): Event => {
     const segment = e.classifications?.[0]?.segment?.id ?? "";
     const type = TYPE_MAP[segment] ?? "other";
@@ -103,5 +106,9 @@ export async function getNearbyEvents(
       )?.url,
       distanceMi: venue?.distance ? parseFloat(venue.distance) : undefined,
     };
-  });
+  }).filter((e: Event) =>
+    // Drop anything the API reports as clearly outside the requested radius.
+    // Use 1.5× tolerance to account for rounding; keep events with no distance.
+    e.distanceMi == null || e.distanceMi <= radiusMi * 1.5
+  );
 }

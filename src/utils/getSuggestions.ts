@@ -203,7 +203,9 @@ export async function getSuggestions(): Promise<SuggestionSet> {
 
   const { mood, answers } = useStore.getState();
   const timeframe: Timeframe = (answers.timeframe as Timeframe) ?? "now";
-  const radiusKm = answers.distance === "far" ? 10 : 3;
+  // "close" = 8 miles (~13 km) — tight Columbus city radius
+  // "far"   = 30 miles (~48 km) — broader metro / willing to drive
+  const radiusKm = answers.distance === "far" ? 48 : 13;
 
   const ctx = await buildContext(latitude, longitude, timeframe, radiusKm);
 

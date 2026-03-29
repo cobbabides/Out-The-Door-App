@@ -82,7 +82,9 @@ export async function buildContext(
       sunsetTime: "8:00 PM",
       icon: "🌤️",
     })),
-    getNearbyEvents(latitude, longitude, Math.max(radiusMi, 25)).catch((): Event[] => []),
+    // Ask for at least 30 mi so we get enough candidates; client-side filtering
+    // in ticketmaster.ts will trim anything beyond the true requested radius.
+    getNearbyEvents(latitude, longitude, Math.max(radiusMi, 30)).catch((): Event[] => []),
     getShowtimes(latitude, longitude, radiusMi).catch((): Showtime[] => []),
     withTimeout(
       Promise.all([
